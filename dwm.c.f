@@ -22,6 +22,8 @@
  */
 #include <errno.h>
 #include <locale.h>
+#include <time.h>
+#include <pthread.h>
 #include <signal.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -163,6 +165,9 @@ static void detachstack(Client *c);
 static Monitor *dirtomon(int dir);
 static void drawbar(Monitor *m);
 static void drawbars(void);
+static void *runmain(void *arg);
+static char *format_time(void);
+static void *clockupdate(void *arg);
 static void enternotify(XEvent *e);
 static void expose(XEvent *e);
 static void focus(Client *c);
@@ -733,6 +738,7 @@ drawbar(Monitor *m)
 		if (m->sel) {
 			drw_setscheme(drw, scheme[m == selmon ? SchemeSel : SchemeNorm]);
 			drw_text(drw, x, 0, w, bh, lrpad / 2, m->sel->name, 0);
+			
 			if (m->sel->isfloating)
 				drw_rect(drw, x + boxs, boxs, boxw, boxw, m->sel->isfixed, 0);
 		} else {
@@ -740,6 +746,8 @@ drawbar(Monitor *m)
 			drw_rect(drw, x, 0, w, bh, 1, 1);
 		}
 	}
+
+	
 	drw_map(drw, m->barwin, 0, 0, m->ww, bh);
 }
 
@@ -750,6 +758,15 @@ drawbars(void)
 
 	for (m = mons; m; m = m->next)
 		drawbar(m);
+}
+
+char *format_time(void){
+    time_t rawtime;
+    struct tm * timeinfo;
+
+    time ( &rawtime );
+    timeinfo = localtime ( &rawtime );
+    return asctime(timeinfo);
 }
 
 void
@@ -1373,12 +1390,45 @@ restack(Monitor *m)
 void
 run(void)
 {
+	
+	//pthread_t clockthread, mainthread;
+	//pthread_create(&mainthread, NULL, runmain, NULL);
+	//pthread_create(&clockthread, NULL, clockupdate, NULL);
+	
+	//pthread_join(mainthread, NULL);
+	//pthread_join(clockthread, NULL);
+	//sleep(10);
+	void *p;
+	runmain(p);
+}
+
+void
+*runmain(void *arg) {
 	XEvent ev;
 	/* main event loop */
 	XSync(dpy, False);
+
 	while (running && !XNextEvent(dpy, &ev))
 		if (handler[ev.type])
 			handler[ev.type](&ev); /* call handler */
+	
+	return arg;
+}
+
+void
+*clockupdate(void *arg)
+{
+	while (running) {
+		sleep(1);
+		char *now = "[%d %d %d %d:%d:%d]";
+		now = strcat(format_time(), "\0");
+		Monitor *m;
+		for (m = mons; m; m = m->next) {
+			int w = TEXTW(m->ltsymbol);
+			drw_text(drw, (m->ww)/2, 0, w, bh, lrpad, now, 0);
+		}
+	}
+	return arg;
 }
 
 void
@@ -1703,15 +1753,6 @@ void
 togglebar(const Arg *arg)
 {
 	selmon->showbar = !selmon->showbar;
-	Client *c;
-	for (c = selmon->clients; c; c = c->next) {
-		if (selmon->showbar) {
-			c->bw = borderpx;
-		} else {
-			c->bw = 0;
-		}
-		resizeclient(c, c->x, c->y, c->w, c->h);
-	}
 	updatebarpos(selmon);
 	XMoveResizeWindow(dpy, selmon->barwin, selmon->wx, selmon->by, selmon->ww, bh);
 	arrange(selmon);
