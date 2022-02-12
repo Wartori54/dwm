@@ -1,20 +1,21 @@
 /* See LICENSE file for copyright and license details. */
 
 /* appearance */
-static const unsigned int borderpx  = 1;        /* border pixel of windows */
+static const unsigned int borderpx  = 0;        /* border pixel of windows */
+static const Gap default_gap        = {.isgap = 1, .realgap = 12, .gappx = 12};
 static const unsigned int snap      = 32;       /* snap pixel */
 static const int showbar            = 1;        /* 0 means no bar */
 static const int topbar             = 1;        /* 0 means bottom bar */
 static const char *fonts[]          = { "Source Code Pro:size=10" };
 static const char dmenufont[]       = "Source Code Pro:size=10";
-static const char col_1[]  = "#282c34"; /* background color of bar */
-static const char col_2[]  = "#282c34"; /* border color unfocused windows */
+static const char col_1[]  = "#001a2b"; /* background color of bar */
+static const char col_2[]  = "#001a2b"; /* border color unfocused windows */
 static const char col_3[]  = "#d7d7d7";
 static const char col_4[]  = "#924441"; /* border color focused windows and tags */
 static const char *colors[][3]        = {
-	/*               fg         bg         border   */
-	[SchemeNorm] = { col_3, col_1, col_2 },
-	[SchemeSel]  = { col_3, col_4, col_4 },
+	/*               fg         bg          border   */
+	[SchemeNorm] = { col_3,     col_1,      col_2 },
+	[SchemeSel]  = { col_3,     col_4,      col_4 },
 };
 
 /* tagging */
@@ -26,8 +27,9 @@ static const Rule rules[] = {
 	 *	WM_NAME(STRING) = title
 	 */
 	/* class      instance    title       tags mask     isfloating   monitor */
-	{ "Gimp",     NULL,       NULL,       0,            1,           -1 },
-	{ "Firefox",  NULL,       NULL,       1 << 8,       0,           -1 },
+	{ "firefox",  NULL,       NULL,       1 << 2,       0,           -1 },
+	{ "discord",  NULL,	      NULL,       1 << 1,       0,           -1 },
+	{ "radeon-profile",  NULL,NULL,       1 << 8,       0,           -1 },
 };
 
 /* layout(s) */
@@ -38,8 +40,8 @@ static const int lockfullscreen = 1; /* 1 will force focus on the fullscreen win
 
 static const Layout layouts[] = {
 	/* symbol     arrange function */
-	{ "><>",      NULL },    /* no layout function means floating behavior */
 	{ "[]=",      tile },    /* first entry is default */
+	{ "><>",      NULL },    /* no layout function means floating behavior */
 	{ "[M]",      monocle },
 };
 
@@ -60,7 +62,7 @@ static const Layout layouts[] = {
 static char dmenumon[2] = "0"; /* component of dmenucmd, manipulated in spawn() */
 static const char *dmenucmd[] = { "dmenu_run", "-m", dmenumon, "-fn", dmenufont, "-nb", col_1, "-nf", col_3, "-sb", col_4, "-sf", col_3, NULL };
 static const char *termcmd[]  = { "terminator", NULL };
-static const char *coresh[] = {"coreshot", "-s", NULL};
+static const char *coresh[] = {"flameshot", "gui", NULL};
 
 static Key keys[] = {
 	/* modifier                     key        function        argument */
@@ -88,6 +90,10 @@ static Key keys[] = {
 	{ MODKEY|ShiftMask,             XK_comma,  tagmon,         {.i = -1 } },
 	{ MODKEY|ShiftMask,             XK_period, tagmon,         {.i = +1 } },
 	{ MODKEY|ShiftMask,             XK_s,      spawn,          {.v = coresh} },
+	{ MODKEY,                       XK_minus,  setgaps,        {.i = -2 } },
+	{ MODKEY,                       XK_plus,  setgaps,        {.i = +2 } },
+	{ MODKEY|ShiftMask,             XK_minus,  setgaps,        {.i = GAP_RESET } },
+	{ MODKEY|ShiftMask,             XK_plus,  setgaps,        {.i = GAP_TOGGLE} },
 	TAGKEYS(                        XK_1,                      0)
 	TAGKEYS(                        XK_2,                      1)
 	TAGKEYS(                        XK_3,                      2)

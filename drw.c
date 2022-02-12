@@ -203,6 +203,8 @@ drw_clr_create(Drw *drw, Clr *dest, const char *clrname)
 	                       DefaultColormap(drw->dpy, drw->screen),
 	                       clrname, dest))
 		die("error, cannot allocate color '%s'", clrname);
+
+	dest->pixel |= 0xff << 24;
 }
 
 /* Wrapper to create color schemes. The caller has to call free(3) on the
@@ -237,15 +239,20 @@ drw_setscheme(Drw *drw, Clr *scm)
 }
 
 void
-drw_rect(Drw *drw, int x, int y, unsigned int w, unsigned int h, int filled, int invert)
+drw_rect(Drw *drw, int x, int y, unsigned int w, unsigned int h, int filled, int invert) // filled = -1, means empty without bottom bar
 {
 	if (!drw || !drw->scheme)
 		return;
 	XSetForeground(drw->dpy, drw->gc, invert ? drw->scheme[ColBg].pixel : drw->scheme[ColFg].pixel);
-	if (filled)
+	if (filled > 0)
 		XFillRectangle(drw->dpy, drw->drawable, drw->gc, x, y, w, h);
-	else
+	else if (filled == 0) 
 		XDrawRectangle(drw->dpy, drw->drawable, drw->gc, x, y, w - 1, h - 1);
+	else if (filled == -1) {
+		XDrawLine(drw->dpy, drw->drawable, drw->gc, x, y, x, y+h);
+		XDrawLine(drw->dpy, drw->drawable, drw->gc, x, y, x+w-1, y);
+		XDrawLine(drw->dpy, drw->drawable, drw->gc, x+w-1, y, x+w-1, y+h);
+	}
 }
 
 int
